@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚔️ NMAP TERMINAL ⚔️</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body class="theme-crt">
+    <div class="container">
+        <header>
+            <h1 class="glitch" data-text="NMAP INTERFACE">NMAP INTERFACE</h1>
+            <div class="vader-container">
+                <div class="vader-helmet">
+                    <div class="helmet-dome"></div>
+                    <div class="helmet-face">
+                        <div class="eyes">
+                            <div class="eye left"></div>
+                            <div class="eye right"></div>
+                        </div>
+                        <div class="grill"></div>
+                    </div>
+                </div>
+                <div class="vader-message" id="vaderMessage">Welcome to the Empire</div>
+            </div>
+        </header>
+
+        <nav class="theme-selector">
+            <h3>Select Your Reality:</h3>
+            <div class="theme-buttons">
+                <button class="theme-btn active" data-theme="crt">📺 CRT TERMINAL</button>
+                <button class="theme-btn" data-theme="cyberpunk">💠 CYBERPUNK</button>
+                <button class="theme-btn" data-theme="retro">💾 RETRO PC</button>
+                <button class="theme-btn" data-theme="synthwave">🌅 SYNTHWAVE</button>
+                <button class="theme-btn empire" data-theme="empire">⚔️ EMPIRE</button>
+            </div>
+        </nav>
+
+        <main class="app-grid">
+            <section class="scan-panel">
+                <h2>⚡ SCAN CONFIGURATION</h2>
+                <form id="scanForm">
+                    <div class="form-group">
+                        <label>TARGET HOST</label>
+                        <input type="text" id="target" placeholder="e.g., 192.168.1.1 or scanme.nmap.org" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>SCAN TYPE</label>
+                        <select id="scanType">
+                            <option value="quick">⚡ Quick Scan (-T4 -F)</option>
+                            <option value="full">🔍 Full Port Scan (-p-)</option>
+                            <option value="os">🖥️ OS Detection (-O)</option>
+                            <option value="version">📋 Version Detection (-sV)</option>
+                            <option value="script">🔧 Script Scan (-sC)</option>
+                            <option value="comprehensive">🌟 Comprehensive (-p- -A)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group options-group">
+                        <label>ADVANCED OPTIONS</label>
+                        <div class="checkbox-grid">
+                            <label class="checkbox">
+                                <input type="checkbox" id="verbose"> Verbose Output (-v)
+                            </label>
+                            <label class="checkbox">
+                                <input type="checkbox" id="noPing"> No Ping (-Pn)
+                            </label>
+                        </div>
+                        <div class="timing-select">
+                            <label>TIMING TEMPLATE:</label>
+                            <select id="timing">
+                                <option value="">Default</option>
+                                <option value="0">T0 - Paranoid</option>
+                                <option value="1">T1 - Sneaky</option>
+                                <option value="2">T2 - Polite</option>
+                                <option value="3">T3 - Normal</option>
+                                <option value="4">T4 - Aggressive</option>
+                                <option value="5">T5 - Insane</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn-primary">
+                            🚀 INITIATE SCAN
+                        </button>
+                        <button type="button" id="stopBtn" class="btn-danger" disabled>
+                            🛑 ABORT SCAN
+                        </button>
+                    </div>
+                </form>
+
+                <div class="terminal-link">
+                    <h3>🖥️ WEB TERMINAL ACCESS</h3>
+                    <a id="terminalLink" href="http://localhost:7681" target="_blank" class="btn-terminal">
+                        OPEN TERMINAL
+                    </a>
+                    <p class="terminal-creds">Username: admin | Password: admin</p>
+                </div>
+            </section>
+
+            <section class="output-panel">
+                <div class="output-header">
+                    <h2>📊 SCAN OUTPUT</h2>
+                    <div class="scan-info" id="scanInfo"></div>
+                </div>
+                
+                <div class="progress-container" id="progressContainer" style="display: none;">
+                    <div class="retro-progress">
+                        <div class="progress-bar" id="progressBar"></div>
+                        <span class="progress-text" id="progressText">INITIALIZING...</span>
+                    </div>
+                </div>
+
+                <div class="output-terminal" id="outputTerminal">
+                    <div class="terminal-content" id="terminalContent">
+                        <div class="welcome-message">
+                            <pre>
+╔══════════════════════════════════════════╗
+║     NMAP INTERFACE v1.0 - SYSTEM READY   ║
+╠══════════════════════════════════════════╣
+║  Select target and scan type to begin    ║
+║  All your base are belong to us          ║
+╚══════════════════════════════════════════╝
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="output-actions">
+                    <button id="clearBtn" class="btn-secondary">🗑️ CLEAR</button>
+                    <button id="exportBtn" class="btn-secondary" disabled>💾 EXPORT JSON</button>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>🌟 Built for the Empire | Port 1337 | Terminal Port 7681 🌟</p>
+        </footer>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

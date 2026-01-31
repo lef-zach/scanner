@@ -1,0 +1,15 @@
+{
+  "name": "retro-nmap-web",
+  "version": "1.0.0",
+  "description": "Retro 80s nmap web interface with Darth Vader",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "child_process": "^1.0.2",
+    "cors": "^2.8.5"
+  }
+}

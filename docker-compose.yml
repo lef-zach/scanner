@@ -1,0 +1,33 @@
+services:
+  nmap-terminal:
+    build:
+      context: .
+      dockerfile: Dockerfile.terminal
+    container_name: nmap-terminal
+    ports:
+      - "7681:7681"
+    networks:
+      - nmap-network
+    restart: unless-stopped
+
+  nmap-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: nmap-web
+    ports:
+      - "1337:1337"
+    environment:
+      - TERMINAL_URL=http://nmap-terminal:7681
+      - TERMINAL_CONTAINER=nmap-terminal
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - nmap-network
+    depends_on:
+      - nmap-terminal
+    restart: unless-stopped
+
+networks:
+  nmap-network:
+    driver: bridge

@@ -1,0 +1,831 @@
+/* ============================================
+   RETRO NMAP INTERFACE - ALL THEMES
+   80s aesthetics for modern scanning
+   ============================================ */
+
+/* CSS Variables for theming */
+:root {
+    --bg-color: #000;
+    --text-color: #0f0;
+    --accent-color: #0f0;
+    --secondary-color: #003300;
+    --border-color: #0f0;
+    --glow-color: rgba(0, 255, 0, 0.5);
+    --font-family: 'Courier New', monospace;
+    --scanline-opacity: 0.1;
+}
+
+/* ============================================
+   CRT TERMINAL THEME (Default)
+   Green phosphor monitor aesthetic
+   ============================================ */
+.theme-crt {
+    --bg-color: #0a0a0a;
+    --text-color: #00ff41;
+    --accent-color: #00ff41;
+    --secondary-color: #001100;
+    --border-color: #00ff41;
+    --glow-color: rgba(0, 255, 65, 0.6);
+    --scanline-opacity: 0.15;
+}
+
+/* ============================================
+   CYBERPUNK NEON THEME
+   Cyan/Magenta on black
+   ============================================ */
+.theme-cyberpunk {
+    --bg-color: #0a0a0f;
+    --text-color: #00ffff;
+    --accent-color: #ff00ff;
+    --secondary-color: #1a0a2e;
+    --border-color: #00ffff;
+    --glow-color: rgba(0, 255, 255, 0.5);
+    --scanline-opacity: 0.08;
+}
+
+/* ============================================
+   RETRO COMPUTER THEME
+   Amber monitor style
+   ============================================ */
+.theme-retro {
+    --bg-color: #1a0f00;
+    --text-color: #ffb000;
+    --accent-color: #ff8c00;
+    --secondary-color: #2d1f00;
+    --border-color: #ffb000;
+    --glow-color: rgba(255, 176, 0, 0.5);
+    --scanline-opacity: 0.12;
+}
+
+/* ============================================
+   SYNTHWAVE THEME
+   Purple/Pink gradients
+   ============================================ */
+.theme-synthwave {
+    --bg-color: #1a0b2e;
+    --text-color: #ff6b9d;
+    --accent-color: #c44569;
+    --secondary-color: #2d1b4e;
+    --border-color: #ff6b9d;
+    --glow-color: rgba(255, 107, 157, 0.5);
+    --scanline-opacity: 0.1;
+}
+
+/* ============================================
+   EMPIRE THEME (Darth Vader)
+   Dark Side aesthetic
+   ============================================ */
+.theme-empire {
+    --bg-color: #0a0a0a;
+    --text-color: #ff0000;
+    --accent-color: #ff0000;
+    --secondary-color: #1a0000;
+    --border-color: #ff0000;
+    --glow-color: rgba(255, 0, 0, 0.6);
+    --scanline-opacity: 0.2;
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--font-family);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* CRT Scanline Effect */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, var(--scanline-opacity)),
+        rgba(0, 0, 0, var(--scanline-opacity)) 1px,
+        transparent 1px,
+        transparent 2px
+    );
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* Container */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+/* ============================================
+   HEADER & TITLE
+   ============================================ */
+header {
+    text-align: center;
+    padding: 30px 0;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 20px;
+    position: relative;
+}
+
+h1 {
+    font-size: 3rem;
+    letter-spacing: 10px;
+    text-shadow: 0 0 10px var(--glow-color), 0 0 20px var(--glow-color);
+    margin-bottom: 20px;
+}
+
+.glitch {
+    position: relative;
+}
+
+.glitch::before,
+.glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.glitch::before {
+    animation: glitch-1 2s infinite;
+    color: var(--accent-color);
+    z-index: -1;
+}
+
+.glitch::after {
+    animation: glitch-2 2s infinite;
+    color: var(--text-color);
+    z-index: -2;
+}
+
+@keyframes glitch-1 {
+    0%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+    20% { clip-path: inset(20% 0 60% 0); transform: translate(-2px, 2px); }
+    40% { clip-path: inset(40% 0 40% 0); transform: translate(2px, -2px); }
+    60% { clip-path: inset(60% 0 20% 0); transform: translate(-2px, 2px); }
+    80% { clip-path: inset(80% 0 0 0); transform: translate(2px, -2px); }
+}
+
+@keyframes glitch-2 {
+    0%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+    20% { clip-path: inset(60% 0 20% 0); transform: translate(2px, -2px); }
+    40% { clip-path: inset(40% 0 40% 0); transform: translate(-2px, 2px); }
+    60% { clip-path: inset(20% 0 60% 0); transform: translate(2px, -2px); }
+    80% { clip-path: inset(0 0 80% 0); transform: translate(-2px, 2px); }
+}
+
+/* ============================================
+   DARTH VADER HELMET
+   ============================================ */
+.vader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.vader-helmet {
+    width: 120px;
+    height: 150px;
+    position: relative;
+    animation: breathe 4s ease-in-out infinite;
+}
+
+@keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+.helmet-dome {
+    width: 100%;
+    height: 60%;
+    background: linear-gradient(135deg, #2a2a2a 0%, #000 50%, #2a2a2a 100%);
+    border-radius: 50% 50% 0 0;
+    position: relative;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.helmet-dome::after {
+    content: '';
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20%;
+    height: 30%;
+    background: linear-gradient(to bottom, #1a1a1a, #000);
+    border-radius: 50%;
+}
+
+.helmet-face {
+    width: 100%;
+    height: 50%;
+    background: linear-gradient(to bottom, #000 0%, #1a1a1a 100%);
+    position: absolute;
+    bottom: 0;
+    border-radius: 0 0 20% 20%;
+    border: 2px solid #333;
+}
+
+.eyes {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15%;
+}
+
+.eye {
+    width: 25px;
+    height: 12px;
+    background: #000;
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--glow-color), inset 0 0 5px var(--glow-color);
+    animation: vader-eyes 3s ease-in-out infinite;
+}
+
+.theme-empire .eye {
+    background: #300;
+    box-shadow: 0 0 15px #f00, inset 0 0 10px #f00;
+}
+
+@keyframes vader-eyes {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
+}
+
+.grill {
+    width: 40%;
+    height: 30%;
+    margin: 10% auto 0;
+    background: repeating-linear-gradient(
+        0deg,
+        #000,
+        #000 2px,
+        #333 2px,
+        #333 4px
+    );
+    border-radius: 10%;
+}
+
+.vader-message {
+    margin-top: 15px;
+    font-size: 1.2rem;
+    font-style: italic;
+    opacity: 0.8;
+    animation: message-flicker 2s ease-in-out infinite;
+}
+
+@keyframes message-flicker {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; text-shadow: 0 0 10px var(--glow-color); }
+}
+
+/* ============================================
+   THEME SELECTOR
+   ============================================ */
+.theme-selector {
+    background: var(--secondary-color);
+    border: 2px solid var(--border-color);
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.theme-selector h3 {
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.theme-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.theme-btn {
+    padding: 10px 20px;
+    background: transparent;
+    border: 2px solid var(--border-color);
+    color: var(--text-color);
+    font-family: var(--font-family);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+}
+
+.theme-btn:hover {
+    background: var(--accent-color);
+    color: var(--bg-color);
+    box-shadow: 0 0 15px var(--glow-color);
+}
+
+.theme-btn.active {
+    background: var(--accent-color);
+    color: var(--bg-color);
+    box-shadow: 0 0 20px var(--glow-color);
+}
+
+.theme-btn.empire {
+    border-color: #ff0000;
+    color: #ff0000;
+}
+
+.theme-btn.empire:hover,
+.theme-btn.empire.active {
+    background: #ff0000;
+    color: #000;
+    box-shadow: 0 0 20px #ff0000;
+}
+
+/* ============================================
+   MAIN APP GRID
+   ============================================ */
+.app-grid {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 1024px) {
+    .app-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   SCAN PANEL
+   ============================================ */
+.scan-panel {
+    background: var(--secondary-color);
+    border: 2px solid var(--border-color);
+    padding: 20px;
+    height: fit-content;
+}
+
+.scan-panel h2 {
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    background: var(--bg-color);
+    border: 2px solid var(--border-color);
+    color: var(--text-color);
+    font-family: var(--font-family);
+    font-size: 1rem;
+    outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    box-shadow: 0 0 10px var(--glow-color);
+}
+
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.checkbox input {
+    width: auto;
+    cursor: pointer;
+}
+
+.timing-select {
+    margin-top: 10px;
+}
+
+.timing-select label {
+    font-size: 0.8rem;
+    margin-bottom: 5px;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-primary,
+.btn-danger,
+.btn-secondary,
+.btn-terminal {
+    flex: 1;
+    padding: 15px;
+    border: 2px solid var(--border-color);
+    font-family: var(--font-family);
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+}
+
+.btn-primary {
+    background: var(--accent-color);
+    color: var(--bg-color);
+}
+
+.btn-primary:hover {
+    box-shadow: 0 0 20px var(--glow-color);
+    transform: translateY(-2px);
+}
+
+.btn-danger {
+    background: #ff0000;
+    color: #fff;
+    border-color: #ff0000;
+}
+
+.btn-danger:hover:not(:disabled) {
+    box-shadow: 0 0 20px #ff0000;
+}
+
+.btn-danger:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--text-color);
+    padding: 10px;
+}
+
+.btn-secondary:hover {
+    background: var(--accent-color);
+    color: var(--bg-color);
+}
+
+.btn-terminal {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    background: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
+    color: var(--bg-color);
+    margin-top: 10px;
+}
+
+.btn-terminal:hover {
+    box-shadow: 0 0 20px var(--glow-color);
+}
+
+/* ============================================
+   TERMINAL LINK SECTION
+   ============================================ */
+.terminal-link {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid var(--border-color);
+    text-align: center;
+}
+
+.terminal-link h3 {
+    margin-bottom: 10px;
+}
+
+.terminal-creds {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    margin-top: 10px;
+}
+
+/* ============================================
+   OUTPUT PANEL
+   ============================================ */
+.output-panel {
+    background: var(--secondary-color);
+    border: 2px solid var(--border-color);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 600px;
+}
+
+.output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.output-header h2 {
+    margin: 0;
+}
+
+.scan-info {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+/* Progress Bar */
+.progress-container {
+    margin-bottom: 20px;
+}
+
+.retro-progress {
+    position: relative;
+    height: 30px;
+    background: var(--bg-color);
+    border: 2px solid var(--border-color);
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--accent-color);
+    transition: width 0.3s;
+    position: relative;
+}
+
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 10px,
+        rgba(0, 0, 0, 0.3) 10px,
+        rgba(0, 0, 0, 0.3) 20px
+    );
+    animation: progress-stripes 1s linear infinite;
+}
+
+@keyframes progress-stripes {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(20px); }
+}
+
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: bold;
+    text-shadow: 0 0 5px var(--bg-color);
+    z-index: 1;
+}
+
+/* ============================================
+   OUTPUT TERMINAL
+   ============================================ */
+.output-terminal {
+    flex: 1;
+    background: var(--bg-color);
+    border: 2px solid var(--border-color);
+    padding: 15px;
+    overflow: hidden;
+    position: relative;
+}
+
+.terminal-content {
+    height: 100%;
+    overflow-y: auto;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.terminal-content::-webkit-scrollbar {
+    width: 10px;
+}
+
+.terminal-content::-webkit-scrollbar-track {
+    background: var(--secondary-color);
+}
+
+.terminal-content::-webkit-scrollbar-thumb {
+    background: var(--accent-color);
+}
+
+.welcome-message {
+    text-align: center;
+    opacity: 0.7;
+}
+
+.welcome-message pre {
+    color: var(--accent-color);
+}
+
+.output-line {
+    margin: 2px 0;
+    animation: fade-in 0.3s ease-in;
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.output-line.stdout {
+    color: var(--text-color);
+}
+
+.output-line.stderr {
+    color: #ff6600;
+}
+
+.output-line.error {
+    color: #ff0000;
+}
+
+.output-line.success {
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+/* ============================================
+   OUTPUT ACTIONS
+   ============================================ */
+.output-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 30px;
+    border-top: 2px solid var(--border-color);
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+/* ============================================
+   EMPIRE THEME SPECIFIC
+   ============================================ */
+.theme-empire .vader-helmet {
+    animation: vader-breathe 4s ease-in-out infinite;
+}
+
+@keyframes vader-breathe {
+    0%, 100% { 
+        transform: scale(1);
+        filter: drop-shadow(0 0 10px #ff0000);
+    }
+    50% { 
+        transform: scale(1.03);
+        filter: drop-shadow(0 0 25px #ff0000);
+    }
+}
+
+.theme-empire .helmet-dome {
+    background: linear-gradient(135deg, #1a0000 0%, #000 50%, #1a0000 100%);
+}
+
+.theme-empire .helmet-face {
+    background: linear-gradient(to bottom, #000 0%, #0a0000 100%);
+    border-color: #330000;
+}
+
+/* ============================================
+   CYBERPUNK THEME SPECIFIC
+   ============================================ */
+.theme-cyberpunk .vader-helmet {
+    filter: hue-rotate(180deg) saturate(2);
+}
+
+/* ============================================
+   SYNTHWAVE THEME SPECIFIC
+   ============================================ */
+.theme-synthwave body {
+    background: linear-gradient(180deg, #1a0b2e 0%, #2d1b4e 50%, #1a0b2e 100%);
+}
+
+.theme-synthwave .vader-helmet {
+    filter: hue-rotate(300deg);
+}
+
+/* ============================================
+   RETRO THEME SPECIFIC
+   ============================================ */
+.theme-retro h1 {
+    font-family: 'Courier New', Courier, monospace;
+    letter-spacing: 5px;
+}
+
+.theme-retro .vader-helmet {
+    filter: sepia(1) hue-rotate(10deg);
+}
+
+/* ============================================
+   CRT THEME SPECIFIC
+   ============================================ */
+.theme-crt .terminal-content {
+    text-shadow: 0 0 5px var(--glow-color);
+}
+
+.theme-crt .vader-helmet {
+    filter: hue-rotate(90deg);
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2rem;
+        letter-spacing: 5px;
+    }
+    
+    .vader-helmet {
+        width: 80px;
+        height: 100px;
+    }
+    
+    .theme-buttons {
+        flex-direction: column;
+    }
+    
+    .theme-btn {
+        width: 100%;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .checkbox-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+.hidden {
+    display: none !important;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.mb-0 {
+    margin-bottom: 0;
+}
+
+.mt-0 {
+    margin-top: 0;
+}
