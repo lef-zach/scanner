@@ -1,6 +1,8 @@
 // Retro Nmap Web Interface - Frontend Application
 // 80s aesthetics with Darth Vader
 
+console.log('⚔️ Retro Nmap Interface Loading...');
+
 const socket = io();
 
 // WebSocket connection monitoring
