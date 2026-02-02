@@ -59,7 +59,7 @@ app.post('/api/scan', (req, res) => {
   if (options) {
     if (options.timing) nmapArgs.push(`-T${options.timing}`);
     if (options.verbose) nmapArgs.push('-v');
-    if (options.noPing) nmapArgs.push('-Pn');;
+    if (options.noPing) nmapArgs.push('-Pn');
   }
   
   nmapArgs.push(target);
