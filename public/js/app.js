@@ -421,8 +421,7 @@ async function handleStopScan() {
         const data = await response.json();
         
         if (data.success) {
-            appendOutput('\n>>> SCAN ABORTED BY USER <<<
-', 'error');
+            appendOutput('\n>>> SCAN ABORTED BY USER <<<', 'error');
             setVaderMessage('The scan has been terminated by the Dark Side.');
         }
     } catch (error) {
