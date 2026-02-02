@@ -3,7 +3,22 @@
 
 console.log('⚔️ Retro Nmap Interface Loading...');
 
-const socket = io();
+// Check if Socket.io is loaded
+if (typeof io === 'undefined') {
+    console.error('❌ CRITICAL: Socket.io CDN not loaded! Check network tab for cdn.socket.io errors.');
+    // Try to load dynamically as fallback
+    const script = document.createElement('script');
+    script.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
+    script.onload = function() {
+        console.log('Socket.io dynamically loaded');
+        window.socket = io(); // Will be set after reload
+    };
+    document.head.appendChild(script);
+} else {
+    console.log('✅ Socket.io loaded successfully');
+}
+
+const socket = typeof io !== 'undefined' ? io() : null;
 
 // WebSocket connection monitoring
 socket.on('connect', () => {
