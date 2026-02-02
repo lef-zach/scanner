@@ -32,34 +32,71 @@ app.post('/api/scan', (req, res) => {
   // Build nmap command
   let nmapArgs = [];
   
+  // Start with timing template (default T4, override if specified in options)
+  let timingTemplate = '-T4';
+  if (options && options.timing) {
+    timingTemplate = `-T${options.timing}`;
+  }
+  nmapArgs.push(timingTemplate);
+  
+  // Add scan type specific flags (excluding port flags)
   switch(scanType) {
     case 'quick':
-      nmapArgs = ['-T4', '-F'];
+      // -F will be added later if no custom ports
       break;
     case 'full':
-      nmapArgs = ['-p-', '-T4'];
+      // -p- will be added later if no custom ports
       break;
     case 'os':
-      nmapArgs = ['-O', '-T4'];
+      nmapArgs.push('-O');
       break;
     case 'version':
-      nmapArgs = ['-sV', '-T4'];
+      nmapArgs.push('-sV');
       break;
     case 'script':
-      nmapArgs = ['-sC', '-T4'];
+      nmapArgs.push('-sC');
       break;
     case 'comprehensive':
-      nmapArgs = ['-p-', '-A', '-T4'];
+      nmapArgs.push('-A');
+      // -p- will be added later if no custom ports
       break;
     default:
-      nmapArgs = ['-T4'];
+      // No additional flags for custom or unknown types
+      break;
+  }
+  
+  // Handle port specification
+  const hasCustomPorts = options && options.ports && options.ports.trim() !== '';
+  if (hasCustomPorts) {
+    // User specified custom ports, clean and use them
+    let ports = options.ports.trim();
+    // Clean port specification for nmap: remove spaces around commas and hyphens
+    ports = ports
+      .replace(/,\s+/g, ',')      // Remove spaces after commas
+      .replace(/\s+,/g, ',')      // Remove spaces before commas  
+      .replace(/\s*-\s*/g, '-')   // Remove spaces around hyphens
+      .replace(/\s+/g, '');       // Remove any remaining spaces
+    nmapArgs.push(`-p ${ports}`);
+  } else {
+    // No custom ports, use defaults based on scan type
+    switch(scanType) {
+      case 'quick':
+        nmapArgs.push('-F');  // Fast scan (limited ports)
+        break;
+      case 'full':
+      case 'comprehensive':
+        nmapArgs.push('-p-');  // All ports
+        break;
+      // For os, version, script scans, no default port specification
+      // (nmap will scan default ports)
+    }
   }
   
   // Add additional options
   if (options) {
-    if (options.timing) nmapArgs.push(`-T${options.timing}`);
     if (options.verbose) nmapArgs.push('-v');
     if (options.noPing) nmapArgs.push('-Pn');
+    // Timing already handled above
   }
   
   nmapArgs.push(target);

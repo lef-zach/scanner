@@ -62,7 +62,14 @@
                             <option value="version">📋 Version Detection (-sV)</option>
                             <option value="script">🔧 Script Scan (-sC)</option>
                             <option value="comprehensive">🌟 Comprehensive (-p- -A)</option>
+                            <option value="custom">🎯 Custom Ports</option>
                         </select>
+                    </div>
+
+                    <div class="form-group" id="customPortsGroup" style="display: none;">
+                        <label>CUSTOM PORTS</label>
+                        <input type="text" id="customPorts" placeholder="Examples: 80, 443, 22-1000, 1-65535">
+                        <div class="target-help">Nmap port specification: single (80), range (1-1000), comma-separated (22,80,443), combination (1-100,8080)</div>
                     </div>
 
                     <div class="form-group options-group">
@@ -148,6 +155,6 @@
         </footer>
     </div>
 
-    <script src="js/app.js?v=1.0.4"></script>
+    <script src="js/app.js?v=1.0.5"></script>
 </body>
 </html>

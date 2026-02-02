@@ -57,6 +57,8 @@ function setupSocketListeners() {
 const scanForm = document.getElementById('scanForm');
 const targetInput = document.getElementById('target');
 const scanTypeSelect = document.getElementById('scanType');
+const customPortsInput = document.getElementById('customPorts');
+const customPortsGroup = document.getElementById('customPortsGroup');
 const verboseCheckbox = document.getElementById('verbose');
 const noPingCheckbox = document.getElementById('noPing');
 const timingSelect = document.getElementById('timing');
@@ -182,6 +184,9 @@ function setupEventListeners() {
     // Form submission
     scanForm.addEventListener('submit', handleScanSubmit);
     
+    // Scan type change - show/hide custom ports
+    scanTypeSelect.addEventListener('change', updateCustomPortsVisibility);
+    
     // Stop button
     stopBtn.addEventListener('click', handleStopScan);
     
@@ -190,6 +195,20 @@ function setupEventListeners() {
     
     // Export button
     exportBtn.addEventListener('click', exportResults);
+    
+    // Initial visibility update
+    updateCustomPortsVisibility();
+}
+
+// Show/hide custom ports field based on scan type selection
+function updateCustomPortsVisibility() {
+    const isCustom = scanTypeSelect.value === 'custom';
+    if (customPortsGroup) {
+        customPortsGroup.style.display = isCustom ? 'block' : 'none';
+    }
+    if (customPortsInput) {
+        customPortsInput.required = isCustom;
+    }
 }
 
 // Update terminal link - compute based on current page location
@@ -255,10 +274,30 @@ async function handleScanSubmit(e) {
     target = target.replace(/\n/g, ' ').replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
     
     const scanType = scanTypeSelect.value;
+    
+    // Get custom ports if specified
+    let customPorts = '';
+    if (customPortsInput && customPortsInput.value.trim()) {
+        customPorts = customPortsInput.value.trim();
+        // Clean port specification for nmap: remove spaces around commas and hyphens
+        customPorts = customPorts
+            .replace(/,\s+/g, ',')      // Remove spaces after commas
+            .replace(/\s+,/g, ',')      // Remove spaces before commas  
+            .replace(/\s*-\s*/g, '-')   // Remove spaces around hyphens
+            .replace(/\s+/g, '');       // Remove any remaining spaces
+    }
+    
+    // Validate custom ports requirement for custom scan type
+    if (scanType === 'custom' && !customPorts) {
+        showError('Custom scan type requires port specification!');
+        return;
+    }
+    
     const options = {
         verbose: verboseCheckbox.checked,
         noPing: noPingCheckbox.checked,
-        timing: timingSelect.value
+        timing: timingSelect.value,
+        ports: customPorts
     };
     
     // Validate target
