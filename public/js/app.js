@@ -65,6 +65,7 @@ const timingSelect = document.getElementById('timing');
 const stopBtn = document.getElementById('stopBtn');
 const clearBtn = document.getElementById('clearBtn');
 const exportBtn = document.getElementById('exportBtn');
+const reportBtn = document.getElementById('reportBtn');
 const terminalContent = document.getElementById('terminalContent');
 const progressContainer = document.getElementById('progressContainer');
 const progressBar = document.getElementById('progressBar');
@@ -195,6 +196,9 @@ function setupEventListeners() {
     
     // Export button
     exportBtn.addEventListener('click', exportResults);
+    
+    // Report button
+    reportBtn.addEventListener('click', generateSecurityReport);
     
     // Initial visibility update
     updateCustomPortsVisibility();
@@ -418,6 +422,7 @@ function handleScanComplete(data) {
     currentScanId = null;
     stopBtn.disabled = true;
     exportBtn.disabled = false;
+    reportBtn.disabled = false;
     setFormDisabled(false);
     hideProgress();
     
@@ -503,6 +508,7 @@ function clearOutput() {
     `;
     currentOutput = '';
     exportBtn.disabled = true;
+    reportBtn.disabled = true;
     scanInfo.textContent = '';
     hideProgress();
     setVaderMessage('Terminal cleared. A new hope begins.');
@@ -531,6 +537,357 @@ function exportResults() {
     URL.revokeObjectURL(url);
     
     setVaderMessage('Data exported. The Emperor will be pleased.');
+}
+
+// Generate Security Report
+function generateSecurityReport() {
+    if (!currentOutput) return;
+    
+    console.log('Generating security report...');
+    
+    // Parse nmap output for key information
+    const lines = currentOutput.split('\n');
+    const reportData = {
+        timestamp: new Date().toISOString(),
+        target: targetInput.value,
+        scanType: scanTypeSelect.value,
+        openPorts: [],
+        services: [],
+        hosts: [],
+        scanDetails: {}
+    };
+    
+    // Basic parsing of nmap output
+    let currentHost = '';
+    let inPortSection = false;
+    
+    for (let line of lines) {
+        line = line.trim();
+        
+        // Extract host information
+        if (line.startsWith('Nmap scan report for')) {
+            currentHost = line.replace('Nmap scan report for', '').trim();
+            reportData.hosts.push(currentHost);
+        }
+        
+        // Detect port section
+        if (line.includes('PORT') && line.includes('STATE') && line.includes('SERVICE')) {
+            inPortSection = true;
+            continue;
+        }
+        
+        // Exit port section
+        if (inPortSection && (line === '' || line.startsWith('Nmap done') || line.startsWith('MAC Address'))) {
+            inPortSection = false;
+        }
+        
+        // Parse port lines (format: "80/tcp open http")
+        if (inPortSection && line.includes('/')) {
+            const parts = line.split(/\s+/).filter(p => p !== '');
+            if (parts.length >= 3) {
+                const [portProto, state, service] = parts;
+                const [port, protocol] = portProto.split('/');
+                
+                if (state === 'open' || state === 'filtered') {
+                    const portInfo = {
+                        host: currentHost || 'Unknown',
+                        port: port,
+                        protocol: protocol,
+                        state: state,
+                        service: service || 'unknown',
+                        fullLine: line
+                    };
+                    
+                    reportData.openPorts.push(portInfo);
+                    
+                    // Extract version if available (rest of line after service)
+                    const serviceIndex = line.indexOf(service) + service.length;
+                    const versionInfo = line.substring(serviceIndex).trim();
+                    if (versionInfo) {
+                        portInfo.version = versionInfo;
+                        reportData.services.push({
+                            service: service,
+                            version: versionInfo,
+                            port: port
+                        });
+                    }
+                }
+            }
+        }
+        
+        // Extract scan timing
+        if (line.includes('Nmap done:')) {
+            reportData.scanDetails.completion = line;
+        }
+        if (line.includes('scanned in')) {
+            reportData.scanDetails.duration = line;
+        }
+    }
+    
+    // Generate HTML report
+    const reportHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Report - Nmap Scan</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .report-header {
+            background: #1a237e;
+            color: white;
+            padding: 30px;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 20px;
+        }
+        .report-title {
+            font-size: 2.5em;
+            margin: 0;
+        }
+        .report-subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .section {
+            background: white;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section-title {
+            color: #1a237e;
+            border-bottom: 2px solid #1a237e;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .summary-card {
+            background: #e8eaf6;
+            padding: 20px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .summary-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #1a237e;
+            margin: 10px 0;
+        }
+        .summary-label {
+            font-size: 0.9em;
+            text-transform: uppercase;
+            color: #666;
+        }
+        .port-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .port-table th {
+            background: #1a237e;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        .port-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        .port-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        .port-table tr:hover {
+            background: #e8eaf6;
+        }
+        .risk-high { color: #d32f2f; font-weight: bold; }
+        .risk-medium { color: #f57c00; font-weight: bold; }
+        .risk-low { color: #388e3c; font-weight: bold; }
+        .recommendation {
+            background: #e8f5e8;
+            padding: 15px;
+            border-left: 4px solid #388e3c;
+            margin: 15px 0;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+            text-align: right;
+            margin-top: 30px;
+        }
+        .logo {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="report-header">
+        <div class="logo">⚔️ VULN Security Scanner</div>
+        <h1 class="report-title">Security Assessment Report</h1>
+        <div class="report-subtitle">Nmap Scan Results Analysis</div>
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">Executive Summary</h2>
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-value">${reportData.hosts.length}</div>
+                <div class="summary-label">Hosts Scanned</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value">${reportData.openPorts.length}</div>
+                <div class="summary-label">Open Ports</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value">${new Set(reportData.openPorts.map(p => p.service)).size}</div>
+                <div class="summary-label">Unique Services</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value">${reportData.scanType}</div>
+                <div class="summary-label">Scan Type</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">Scan Details</h2>
+        <p><strong>Target:</strong> ${reportData.target}</p>
+        <p><strong>Scan Type:</strong> ${reportData.scanType}</p>
+        <p><strong>Timestamp:</strong> ${new Date(reportData.timestamp).toLocaleString()}</p>
+        ${reportData.scanDetails.duration ? `<p><strong>Duration:</strong> ${reportData.scanDetails.duration}</p>` : ''}
+        ${reportData.scanDetails.completion ? `<p><strong>Status:</strong> ${reportData.scanDetails.completion}</p>` : ''}
+    </div>
+    
+    ${reportData.openPorts.length > 0 ? `
+    <div class="section">
+        <h2 class="section-title">Open Ports & Services</h2>
+        <table class="port-table">
+            <thead>
+                <tr>
+                    <th>Host</th>
+                    <th>Port</th>
+                    <th>Protocol</th>
+                    <th>State</th>
+                    <th>Service</th>
+                    <th>Version</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${reportData.openPorts.map(port => `
+                <tr>
+                    <td>${port.host}</td>
+                    <td>${port.port}</td>
+                    <td>${port.protocol}</td>
+                    <td>${port.state === 'open' ? '<span class="risk-high">OPEN</span>' : '<span class="risk-medium">FILTERED</span>'}</td>
+                    <td>${port.service}</td>
+                    <td>${port.version || 'N/A'}</td>
+                </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    </div>
+    ` : ''}
+    
+    <div class="section">
+        <h2 class="section-title">Security Assessment</h2>
+        ${reportData.openPorts.length === 0 ? `
+        <div class="recommendation">
+            <h3>✅ No Open Ports Found</h3>
+            <p>The target appears to have no accessible open ports. This is a positive security finding.</p>
+        </div>
+        ` : `
+        <div class="recommendation">
+            <h3>⚠️ ${reportData.openPorts.length} Open Ports Found</h3>
+            <p>Each open port represents a potential attack surface. Consider the following:</p>
+            <ul>
+                <li>Close unnecessary services and ports</li>
+                <li>Implement firewall rules to restrict access</li>
+                <li>Keep services updated to latest versions</li>
+                <li>Use strong authentication mechanisms</li>
+            </ul>
+        </div>
+        `}
+        
+        ${reportData.services.some(s => s.service.toLowerCase().includes('http')) ? `
+        <div class="recommendation">
+            <h3>🌐 Web Services Detected</h3>
+            <p>Web services (HTTP/HTTPS) were found. Consider:</p>
+            <ul>
+                <li>Implementing Web Application Firewall (WAF)</li>
+                <li>Regular vulnerability scanning of web applications</li>
+                <li>Using HTTPS with proper certificate configuration</li>
+                <li>Implementing security headers (CSP, HSTS, etc.)</li>
+            </ul>
+        </div>
+        ` : ''}
+        
+        ${reportData.services.some(s => s.service.toLowerCase().includes('ssh')) ? `
+        <div class="recommendation">
+            <h3>🔐 SSH Service Detected</h3>
+            <p>SSH service found. Security recommendations:</p>
+            <ul>
+                <li>Disable password authentication, use SSH keys only</li>
+                <li>Change default SSH port from 22</li>
+                <li>Implement fail2ban or similar protection</li>
+                <li>Use strong cryptographic algorithms</li>
+            </ul>
+        </div>
+        ` : ''}
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">Methodology</h2>
+        <p>This report was generated from Nmap scan results. The assessment includes:</p>
+        <ul>
+            <li>Port scanning and service detection</li>
+            <li>Basic service version identification</li>
+            <li>Security posture assessment based on open services</li>
+            <li>General security recommendations</li>
+        </ul>
+        <p><strong>Note:</strong> This is an automated assessment. For comprehensive security testing, consider:</p>
+        <ul>
+            <li>Vulnerability scanning with specialized tools</li>
+            <li>Penetration testing by qualified professionals</li>
+            <li>Compliance auditing for relevant standards</li>
+        </ul>
+    </div>
+    
+    <div class="timestamp">
+        Report generated: ${new Date().toLocaleString()} | VULN Security Scanner v1.0
+    </div>
+</body>
+</html>
+    `;
+    
+    // Create and download the report
+    const blob = new Blob([reportHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `security-report-${Date.now()}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    setVaderMessage('Security report generated. The Empire approves.');
 }
 
 // Show Error

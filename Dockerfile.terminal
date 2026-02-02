@@ -15,4 +15,4 @@ RUN apk add --no-cache \
 
 EXPOSE 7681
 
-CMD ["ttyd", "-p", "7681", "-c", "admin:admin", "-t", "disableLeaveAlert=true", "-t", "disableReconnect=true", "-t", "titleFixed=VULN Terminal", "-t", "fontSize=14", "-t", "term=xterm-256color", "bash"]
+CMD ["ttyd", "-p", "7681", "-c", "admin:admin", "-t", "disableLeaveAlert=true", "-t", "disableReconnect=true", "-t", "titleFixed=VULN Terminal", "-t", "fontSize=14", "-t", "term=xterm-256color", "-t", "enableZmodem=false", "-t", "enableSixel=false", "-t", "enableTrzsz=false", "-t", "cursorBlink=true", "-t", "scrollback=1000", "bash", "-l"]
