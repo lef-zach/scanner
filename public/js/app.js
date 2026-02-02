@@ -3,38 +3,55 @@
 
 console.log('⚔️ Retro Nmap Interface Loading...');
 
-// Check if Socket.io is loaded
-if (typeof io === 'undefined') {
-    console.error('❌ CRITICAL: Socket.io CDN not loaded! Check network tab for cdn.socket.io errors.');
-    // Try to load dynamically as fallback
-    const script = document.createElement('script');
-    script.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
-    script.onload = function() {
-        console.log('Socket.io dynamically loaded');
-        window.socket = io(); // Will be set after reload
-    };
-    document.head.appendChild(script);
-} else {
-    console.log('✅ Socket.io loaded successfully');
+let socket = null;
+
+// Initialize Socket.io with fallback loading
+function initializeSocket() {
+    if (typeof io === 'undefined') {
+        console.error('❌ CRITICAL: Socket.io CDN not loaded! Check network tab for cdn.socket.io errors.');
+        
+        // Try to load dynamically as fallback
+        const script = document.createElement('script');
+        script.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
+        script.onload = function() {
+            console.log('Socket.io dynamically loaded');
+            socket = io();
+            setupSocketListeners();
+        };
+        script.onerror = function() {
+            console.error('Failed to load Socket.io CDN. Scans will not work without WebSocket connection.');
+            // Continue without WebSocket - basic UI will work but scans won't update in real-time
+        };
+        document.head.appendChild(script);
+    } else {
+        console.log('✅ Socket.io loaded successfully');
+        socket = io();
+        setupSocketListeners();
+    }
 }
 
-const socket = typeof io !== 'undefined' ? io() : null;
-
 // WebSocket connection monitoring
-socket.on('connect', () => {
-    console.log('WebSocket connected to server');
-    setVaderMessage('Connected to the Death Star.');
-});
+function setupSocketListeners() {
+    if (!socket) {
+        console.error('Cannot setup socket listeners: socket is null');
+        return;
+    }
+    
+    socket.on('connect', () => {
+        console.log('WebSocket connected to server');
+        setVaderMessage('Connected to the Death Star.');
+    });
 
-socket.on('disconnect', () => {
-    console.log('WebSocket disconnected from server');
-    setVaderMessage('Connection lost. The Force is weak.');
-});
+    socket.on('disconnect', () => {
+        console.log('WebSocket disconnected from server');
+        setVaderMessage('Connection lost. The Force is weak.');
+    });
 
-socket.on('connect_error', (error) => {
-    console.error('WebSocket connection error:', error);
-    setVaderMessage('Connection error. The Dark Side interferes.');
-});
+    socket.on('connect_error', (error) => {
+        console.error('WebSocket connection error:', error);
+        setVaderMessage('Connection error. The Dark Side interferes.');
+    });
+}
 
 // DOM Elements
 const scanForm = document.getElementById('scanForm');
@@ -62,6 +79,8 @@ let currentTheme = 'crt';
 
 // Initialize
 function init() {
+    console.log('Initializing Retro Nmap Interface...');
+    initializeSocket();
     setupThemeSwitcher();
     setupEventListeners();
     updateTerminalLink();
@@ -304,6 +323,12 @@ async function handleScanSubmit(e) {
 
 // Socket.io Listeners for Scan Progress
 function setupScanListeners(scanId) {
+    if (!socket) {
+        console.error('❌ Cannot setup scan listeners: Socket.io not initialized');
+        showError('Real-time updates disabled. Socket.io connection failed.');
+        return;
+    }
+    
     // Progress updates
     socket.on(`scan-progress-${scanId}`, (data) => {
         appendOutput(data.data, data.type);
