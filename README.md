@@ -120,6 +120,40 @@ docker run -d --name nmap-web --network nmap-network -p 1337:1337 \
   nmap-web
 ```
 
+### **Testing Your Installation**
+
+We provide test scripts to verify your installation:
+
+**Bash/Linux/Mac/WSL:**
+```bash
+# Make script executable
+chmod +x scripts/test-installation.sh
+
+# Run test
+./scripts/test-installation.sh
+```
+
+**Windows PowerShell:**
+```powershell
+# Run PowerShell test script
+.\scripts\test-installation.ps1
+```
+
+**Manual test commands:**
+```bash
+# Check containers are running
+docker-compose ps
+
+# Test web interface
+curl -I http://localhost:1337
+
+# Test terminal access
+curl -I http://localhost:7681
+
+# Test nmap in terminal container
+docker exec nmap-terminal nmap --version
+```
+
 ## 🚀 Quick Start (After Installation)
 
 Once installed, access the application:
