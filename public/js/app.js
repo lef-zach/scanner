@@ -3,6 +3,22 @@
 
 const socket = io();
 
+// WebSocket connection monitoring
+socket.on('connect', () => {
+    console.log('WebSocket connected to server');
+    setVaderMessage('Connected to the Death Star.');
+});
+
+socket.on('disconnect', () => {
+    console.log('WebSocket disconnected from server');
+    setVaderMessage('Connection lost. The Force is weak.');
+});
+
+socket.on('connect_error', (error) => {
+    console.error('WebSocket connection error:', error);
+    setVaderMessage('Connection error. The Dark Side interferes.');
+});
+
 // DOM Elements
 const scanForm = document.getElementById('scanForm');
 const targetInput = document.getElementById('target');
@@ -56,8 +72,16 @@ function setupThemeSwitcher() {
 }
 
 function setTheme(theme) {
+    console.log(`Switching to theme: ${theme}`);
     document.body.className = `theme-${theme}`;
     currentTheme = theme;
+    // Debug: Log CSS variables
+    const computedStyle = getComputedStyle(document.body);
+    console.log('Theme applied. CSS vars:', {
+        bgColor: computedStyle.getPropertyValue('--bg-color').trim(),
+        textColor: computedStyle.getPropertyValue('--text-color').trim(),
+        accentColor: computedStyle.getPropertyValue('--accent-color').trim()
+    });
 }
 
 // Vader Messages
@@ -89,12 +113,17 @@ function setupEventListeners() {
     exportBtn.addEventListener('click', exportResults);
 }
 
-// Update terminal link from API
+// Update terminal link from API - use localhost for browser access
 async function updateTerminalLink() {
     try {
         const response = await fetch('/api/terminal');
         const data = await response.json();
-        terminalLink.href = data.url;
+        // If the URL is an internal Docker address, convert to localhost
+        let url = data.url;
+        if (url.includes('nmap-terminal')) {
+            url = url.replace('nmap-terminal', 'localhost');
+        }
+        terminalLink.href = url;
     } catch (error) {
         console.error('Failed to get terminal URL:', error);
     }
@@ -109,7 +138,12 @@ async function handleScanSubmit(e) {
         return;
     }
     
-    const target = targetInput.value.trim();
+    // Process target input - support multiple IPs, ranges, CIDR, etc.
+    let target = targetInput.value.trim();
+    
+    // Clean the input: replace newlines with spaces, commas with spaces, remove extra spaces
+    target = target.replace(/\n/g, ' ').replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
+    
     const scanType = scanTypeSelect.value;
     const options = {
         verbose: verboseCheckbox.checked,
@@ -120,6 +154,14 @@ async function handleScanSubmit(e) {
     // Validate target
     if (!target) {
         showError('Please enter a target!');
+        return;
+    }
+    
+    // Basic validation: check for at least one valid-looking token
+    const tokens = target.split(' ');
+    const validTokens = tokens.filter(t => t.length > 0);
+    if (validTokens.length === 0) {
+        showError('Please enter at least one valid target (IP, hostname, CIDR, range)');
         return;
     }
     

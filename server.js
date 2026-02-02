@@ -66,8 +66,25 @@ app.post('/api/scan', (req, res) => {
   
   // Execute nmap in the terminal container via Docker
   const containerName = 'nmap-terminal';
-  const scanProcess = spawn('docker', ['exec', '-i', containerName, 'nmap', ...nmapArgs]);
+  console.log(`Starting scan ${scanId}: docker exec ${containerName} nmap ${nmapArgs.join(' ')}`);
+  const scanProcess = spawn('docker', ['exec', containerName, 'nmap', ...nmapArgs]);
   activeScans.set(scanId, scanProcess);
+  
+  console.log(`Scan ${scanId} started with PID: ${scanProcess.pid}`);
+  
+  // Handle spawn errors (e.g., docker not found, container not running)
+  scanProcess.on('error', (err) => {
+    console.error(`Scan ${scanId} failed to start:`, err);
+    activeScans.delete(scanId);
+    io.emit(`scan-complete-${scanId}`, {
+      success: false,
+      code: -1,
+      output: '',
+      error: `Failed to start scan: ${err.message}`,
+      vaderMessage: "I find your lack of Docker... disturbing.",
+      theme: theme
+    });
+  });
   
   let output = '';
   let errorOutput = '';
@@ -75,12 +92,16 @@ app.post('/api/scan', (req, res) => {
   scanProcess.stdout.on('data', (data) => {
     const chunk = data.toString();
     output += chunk;
+    console.log(`Scan ${scanId} stdout chunk (${chunk.length} chars)`);
+    if (chunk.length < 200) console.log(`Content: ${chunk}`);
     io.emit(`scan-progress-${scanId}`, { type: 'stdout', data: chunk });
   });
   
   scanProcess.stderr.on('data', (data) => {
     const chunk = data.toString();
     errorOutput += chunk;
+    console.log(`Scan ${scanId} stderr chunk (${chunk.length} chars)`);
+    if (chunk.length < 200) console.log(`Content: ${chunk}`);
     io.emit(`scan-progress-${scanId}`, { type: 'stderr', data: chunk });
   });
   
@@ -92,6 +113,7 @@ app.post('/api/scan', (req, res) => {
       ? "The scan is complete. Impressive... most impressive."
       : "I find your lack of scanning... disturbing.";
     
+    console.log(`Scan ${scanId} completed with code ${code}, output length: ${output.length}`);
     io.emit(`scan-complete-${scanId}`, {
       success: code === 0,
       code: code,
@@ -125,12 +147,56 @@ app.post('/api/scan/:scanId/stop', (req, res) => {
 
 // Terminal info endpoint
 app.get('/api/terminal', (req, res) => {
-  res.json({ url: TERMINAL_URL });
+  // Return external URL for browser access
+  // Use request hostname (or localhost if internal Docker address)
+  const host = req.hostname === 'nmap-terminal' ? 'localhost' : req.hostname;
+  const protocol = req.protocol;
+  const url = `${protocol}://${host}:7681`;
+  res.json({ url: url });
 });
 
 // Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'The Force is strong with this one.', activeScans: activeScans.size });
+app.get('/api/health', async (req, res) => {
+  try {
+    // Test Docker connectivity by checking if nmap-terminal container exists and is running
+    const { spawn } = require('child_process');
+    const testProcess = spawn('docker', ['exec', 'nmap-terminal', 'which', 'nmap']);
+    
+    let testOutput = '';
+    let testError = '';
+    
+    testProcess.stdout.on('data', (data) => testOutput += data.toString());
+    testProcess.stderr.on('data', (data) => testError += data.toString());
+    
+    testProcess.on('close', (code) => {
+      const dockerOk = code === 0;
+      res.json({ 
+        status: dockerOk ? 'The Force is strong with this one.' : 'The Dark Side clouds everything.',
+        activeScans: activeScans.size,
+        docker: dockerOk ? 'connected' : 'disconnected',
+        nmap: dockerOk ? 'available' : 'unavailable',
+        error: testError || null
+      });
+    });
+    
+    testProcess.on('error', (err) => {
+      res.json({ 
+        status: 'The Dark Side has taken over.',
+        activeScans: activeScans.size,
+        docker: 'error',
+        nmap: 'unknown',
+        error: err.message
+      });
+    });
+  } catch (error) {
+    res.json({ 
+      status: 'The Force has abandoned us.',
+      activeScans: activeScans.size,
+      docker: 'error',
+      nmap: 'unknown',
+      error: error.message
+    });
+  }
 });
 
 io.on('connection', (socket) => {

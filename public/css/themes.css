@@ -401,7 +401,8 @@ h1 {
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
     width: 100%;
     padding: 12px;
     background: var(--bg-color);
@@ -410,11 +411,28 @@ h1 {
     font-family: var(--font-family);
     font-size: 1rem;
     outline: none;
+    resize: vertical;
+}
+
+.form-group textarea {
+    min-height: 100px;
+    font-family: 'Courier New', monospace;
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: auto;
 }
 
 .form-group input:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-group textarea:focus {
     box-shadow: 0 0 10px var(--glow-color);
+}
+
+.target-help {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    margin-top: 5px;
+    font-style: italic;
 }
 
 .checkbox-grid {

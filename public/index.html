@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>⚔️ NMAP TERMINAL ⚔️</title>
-    <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/themes.css?v=1.0.1">
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 </head>
 <body class="theme-crt">
@@ -42,8 +42,15 @@
                 <h2>⚡ SCAN CONFIGURATION</h2>
                 <form id="scanForm">
                     <div class="form-group">
-                        <label>TARGET HOST</label>
-                        <input type="text" id="target" placeholder="e.g., 192.168.1.1 or scanme.nmap.org" required>
+                        <label>TARGET HOST(S)</label>
+                        <textarea id="target" rows="3" placeholder="Examples:
+• 192.168.1.1 (single IP)
+• scanme.nmap.org (hostname)
+• 192.168.1.1-10 (IP range)
+• 192.168.1.0/24 (CIDR block)
+• 192.168.1.1,192.168.1.5,192.168.1.10 (comma-separated)
+• 192.168.1.1-5,192.168.2.1-10 (multiple ranges)" required></textarea>
+                        <div class="target-help">Nmap supports: Single IPs, hostnames, IP ranges (1-10), CIDR (/24), comma-separated lists</div>
                     </div>
 
                     <div class="form-group">
