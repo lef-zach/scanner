@@ -53,9 +53,20 @@ function init() {
 
 // Theme Switcher
 function setupThemeSwitcher() {
-    themeButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
+    console.log('Setting up theme switcher. Button count:', themeButtons.length);
+    
+    themeButtons.forEach((btn, index) => {
+        console.log(`Button ${index}: ${btn.textContent.trim()}, data-theme: ${btn.dataset.theme}`);
+        
+        btn.addEventListener('click', (e) => {
+            console.log(`Theme button clicked: ${btn.dataset.theme}`, e);
             const theme = btn.dataset.theme;
+            
+            if (!theme) {
+                console.error('Button has no data-theme attribute');
+                return;
+            }
+            
             setTheme(theme);
             
             // Update active button
@@ -69,19 +80,51 @@ function setupThemeSwitcher() {
             }
         });
     });
+    
+    // Test theme switching on load
+    setTimeout(() => {
+        const activeBtn = document.querySelector('.theme-btn.active');
+        if (activeBtn) {
+            console.log('Active theme on load:', activeBtn.dataset.theme);
+        }
+    }, 1000);
 }
 
 function setTheme(theme) {
     console.log(`Switching to theme: ${theme}`);
-    document.body.className = `theme-${theme}`;
-    currentTheme = theme;
-    // Debug: Log CSS variables
-    const computedStyle = getComputedStyle(document.body);
-    console.log('Theme applied. CSS vars:', {
-        bgColor: computedStyle.getPropertyValue('--bg-color').trim(),
-        textColor: computedStyle.getPropertyValue('--text-color').trim(),
-        accentColor: computedStyle.getPropertyValue('--accent-color').trim()
-    });
+    
+    // Remove all existing theme classes
+    const themeClasses = ['theme-crt', 'theme-cyberpunk', 'theme-retro', 'theme-synthwave', 'theme-empire'];
+    themeClasses.forEach(cls => document.body.classList.remove(cls));
+    
+    // Add new theme class with a tiny delay to ensure repaint
+    setTimeout(() => {
+        document.body.classList.add(`theme-${theme}`);
+        currentTheme = theme;
+        
+        // Force a reflow to ensure CSS variables update
+        document.body.offsetHeight;
+        
+        // Debug: Log CSS variables
+        const computedStyle = getComputedStyle(document.body);
+        const bgColor = computedStyle.getPropertyValue('--bg-color').trim();
+        const textColor = computedStyle.getPropertyValue('--text-color').trim();
+        const accentColor = computedStyle.getPropertyValue('--accent-color').trim();
+        
+        console.log('Theme applied. CSS vars:', { bgColor, textColor, accentColor });
+        
+        // If CSS variables aren't changing, show warning
+        if (!bgColor || bgColor === '#000') {
+            console.warn('CSS variables not updating. Possible CSS loading issue.');
+            // Try to reload CSS
+            const cssLink = document.querySelector('link[href*="themes.css"]');
+            if (cssLink) {
+                const href = cssLink.href.split('?')[0];
+                cssLink.href = `${href}?v=${Date.now()}`;
+                console.log('CSS link reloaded');
+            }
+        }
+    }, 10);
 }
 
 // Vader Messages
@@ -113,19 +156,50 @@ function setupEventListeners() {
     exportBtn.addEventListener('click', exportResults);
 }
 
-// Update terminal link from API - use localhost for browser access
+// Update terminal link - compute based on current page location
 async function updateTerminalLink() {
     try {
-        const response = await fetch('/api/terminal');
-        const data = await response.json();
-        // If the URL is an internal Docker address, convert to localhost
-        let url = data.url;
-        if (url.includes('nmap-terminal')) {
-            url = url.replace('nmap-terminal', 'localhost');
-        }
+        // Use current window location to build terminal URL
+        const protocol = window.location.protocol;
+        const hostname = window.location.hostname;
+        const port = terminalLink.dataset.port || '7681';
+        const url = `${protocol}//${hostname}:${port}`;
+        
         terminalLink.href = url;
+        console.log('Terminal URL set to:', url);
+        
+        // Test terminal connectivity (optional)
+        // testTerminalConnectivity(url);
     } catch (error) {
-        console.error('Failed to get terminal URL:', error);
+        console.error('Failed to set terminal URL:', error);
+        // Fallback to localhost
+        terminalLink.href = `http://localhost:7681`;
+    }
+}
+
+// Check Docker and nmap-terminal container status
+async function checkDockerStatus() {
+    try {
+        const response = await fetch('/api/health');
+        const data = await response.json();
+        console.log('Docker status:', data);
+        
+        if (data.docker === 'connected' && data.nmap === 'available') {
+            return { connected: true, message: 'Docker and nmap ready' };
+        } else {
+            return { 
+                connected: false, 
+                message: `Docker: ${data.docker}, Nmap: ${data.nmap}`,
+                error: data.error || 'Docker not available'
+            };
+        }
+    } catch (error) {
+        console.error('Failed to check Docker status:', error);
+        return { 
+            connected: false, 
+            message: 'Cannot connect to server',
+            error: error.message 
+        };
     }
 }
 
