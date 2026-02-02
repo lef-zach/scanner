@@ -39,10 +39,29 @@ git --version
 ### Step-by-Step Installation
 
 #### **1. Clone the Repository**
+
+**Option A: Using HTTPS (Recommended - works everywhere)**
 ```bash
-# Clone the repository
+# Clone using HTTPS (no SSH setup required)
+git clone https://github.com/lef-zach/scanner.git retro-nmap-scanner
+cd retro-nmap-scanner
+```
+
+**Option B: Using SSH (requires SSH keys setup)**
+```bash
+# Clone using SSH (requires GitHub SSH key setup)
 git clone git@github.com:lef-zach/scanner.git retro-nmap-scanner
 cd retro-nmap-scanner
+```
+
+**If SSH fails with configuration errors**, use HTTPS or fix your SSH config:
+```bash
+# Check SSH configuration
+cat /etc/ssh/ssh_config | head -20
+
+# If you see "Bad configuration option" errors, backup and create clean config:
+sudo mv /etc/ssh/ssh_config /etc/ssh/ssh_config.backup
+sudo touch /etc/ssh/ssh_config
 ```
 
 #### **2. Verify Docker Daemon is Running**
