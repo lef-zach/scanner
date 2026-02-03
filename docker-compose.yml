@@ -10,7 +10,7 @@ services:
       - nmap-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7681/health" ]
+      test: ["CMD", "sh", "-c", "curl -f http://localhost:7681 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

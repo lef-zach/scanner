@@ -25,26 +25,35 @@ echo "Credentials: admin:admin"
 echo "Browser compatibility: Chrome/Firefox/Edge recommended"
 echo "================================="
 
-# Start ttyd with enhanced options for better compatibility
+# Optimize Alpine Linux memory settings
+echo "vm.overcommit_memory = 1" >> /etc/sysctl.conf 2>/dev/null || true
+echo "fs.file-max = 100000" >> /etc/sysctl.conf 2>/dev/null || true
+
+# Start ttyd with enhanced options for browser compatibility
 exec ttyd \
   -w \
   -p 7681 \
   -c admin:admin \
+  -6 \
   -t disableLeaveAlert=true \
   -t disableReconnect=false \
   -t reconnect=true \
-  -t reconnectInterval=5000 \
+  -t reconnectInterval=3000 \
+  -t maxReconnectAttempts=10 \
   -t titleFixed="VULN Terminal" \
   -t fontSize=14 \
-  -t term="xterm-256color" \
+  -t term="xterm" \
   -t enableZmodem=false \
   -t enableSixel=false \
   -t enableTrzsz=true \
   -t trzszDragInitTimeout=300 \
   -t cursorBlink=true \
-  -t scrollback=10000 \
-  -t rendererType="canvas" \
-  -t fontFamily="Monaco, Consolas, Courier New, monospace" \
+  -t scrollback=5000 \
+  -t rendererType="dom" \
+  -t fontFamily="'Courier New', monospace" \
+  -t theme="{background: 'black', foreground: 'white'}" \
+  -t checkOrigin=false \
+  -t clientOptions='{"enableVTScribe": false}' \
   bash -l
 EOF
 
