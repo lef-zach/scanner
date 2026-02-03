@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>⚔️ NMAP TERMINAL ⚔️</title>
-    <link rel="stylesheet" href="css/themes.css?v=1.0.1">
+    <link rel="stylesheet" href="css/themes.css?v=1.0.2">
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 </head>
 <body class="theme-crt">
@@ -94,6 +94,11 @@
                                 <option value="5">T5 - Insane</option>
                             </select>
                         </div>
+                        <div class="delay-select">
+                            <label>DELAY BETWEEN TARGETS (seconds):</label>
+                            <input type="number" id="delay" min="0" max="300" value="0" style="width: 100px;">
+                            <div class="target-help">Add delay between scanning multiple targets (0 = scan all simultaneously)</div>
+                        </div>
                     </div>
 
                     <div class="button-group">
@@ -156,6 +161,6 @@
         </footer>
     </div>
 
-    <script src="js/app.js?v=1.0.6"></script>
+    <script src="js/app.js?v=1.0.7"></script>
 </body>
 </html>

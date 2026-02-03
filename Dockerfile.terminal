@@ -15,4 +15,37 @@ RUN apk add --no-cache \
 
 EXPOSE 7681
 
-CMD ["ttyd", "-p", "7681", "-c", "admin:admin", "-t", "disableLeaveAlert=true", "-t", "disableReconnect=true", "-t", "titleFixed=VULN Terminal", "-t", "fontSize=14", "-t", "term=xterm-256color", "-t", "enableZmodem=false", "-t", "enableSixel=false", "-t", "enableTrzsz=false", "-t", "cursorBlink=true", "-t", "scrollback=1000", "bash", "-l"]
+# Create startup script
+RUN echo '#!/bin/sh' > /start.sh && \
+    echo 'echo "=== Starting ttyd terminal ==="' >> /start.sh && \
+    echo 'echo "ttyd version: $(ttyd --version 2>/dev/null || echo "unknown")"' >> /start.sh && \
+    echo 'echo "Terminal will be available on port 7681"' >> /start.sh && \
+    echo 'echo "Credentials: admin:admin"' >> /start.sh && \
+    echo 'echo "Browser compatibility: Chrome/Firefox/Edge recommended"' >> /start.sh && \
+    echo 'echo "================================="' >> /start.sh && \
+    echo '' >> /start.sh && \
+    echo '# Start ttyd with enhanced options for better compatibility' >> /start.sh && \
+    echo 'exec ttyd \' >> /start.sh && \
+    echo '  -w \' >> /start.sh && \
+    echo '  -p 7681 \' >> /start.sh && \
+    echo '  -c admin:admin \' >> /start.sh && \
+    echo '  -t disableLeaveAlert=true \' >> /start.sh && \
+    echo '  -t disableReconnect=false \' >> /start.sh && \
+    echo '  -t reconnect=true \' >> /start.sh && \
+    echo '  -t reconnectInterval=5000 \' >> /start.sh && \
+    echo '  -t titleFixed="VULN Terminal" \' >> /start.sh && \
+    echo '  -t fontSize=14 \' >> /start.sh && \
+    echo '  -t term="xterm-256color" \' >> /start.sh && \
+    echo '  -t enableZmodem=false \' >> /start.sh && \
+    echo '  -t enableSixel=false \' >> /start.sh && \
+    echo '  -t enableTrzsz=true \' >> /start.sh && \
+    echo '  -t trzszDragInitTimeout=300 \' >> /start.sh && \
+    echo '  -t cursorBlink=true \' >> /start.sh && \
+    echo '  -t scrollback=10000 \' >> /start.sh && \
+    echo '  -t rendererType="canvas" \' >> /start.sh && \
+    echo '  -t fontFamily="Monaco, Consolas, Courier New, monospace" \' >> /start.sh && \
+    echo '  -t theme="{ foreground: \''#00ff41\'', background: \''#0a0a0a\'' }" \' >> /start.sh && \
+    echo '  bash -l' >> /start.sh && \
+    chmod +x /start.sh
+
+CMD ["/start.sh"]

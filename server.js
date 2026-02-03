@@ -23,13 +23,32 @@ app.use(express.static('public'));
 
 // Active scans storage
 const activeScans = new Map();
+const scanInfos = new Map();
+
+// Helper function to split targets into individual targets
+function splitTargets(targetString) {
+    // Replace commas and newlines with spaces, then split by spaces
+    return targetString
+        .replace(/,/g, ' ')
+        .replace(/\n/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .split(' ')
+        .filter(t => t.length > 0);
+}
 
 // Nmap scan endpoint
 app.post('/api/scan', (req, res) => {
   const { target, scanType, options, theme } = req.body;
   const scanId = Date.now().toString();
   
-  // Build nmap command
+  // Get delay between targets (default 0)
+  const delaySeconds = options?.delay || 0;
+  
+  // Split targets if delay is specified, otherwise use as single target
+  const individualTargets = delaySeconds > 0 ? splitTargets(target) : [target];
+  
+  // Build base nmap arguments (without target)
   let nmapArgs = [];
   
   // Start with timing template (default T4, override if specified in options)
@@ -99,71 +118,138 @@ app.post('/api/scan', (req, res) => {
     // Timing already handled above
   }
   
-  nmapArgs.push(target);
+  // Store scan info for sequential processing
+  const scanInfo = {
+    scanId,
+    theme,
+    individualTargets,
+    currentIndex: 0,
+    totalOutput: '',
+    totalError: '',
+    processes: [],
+    completed: false
+  };
   
-  // Execute nmap in the terminal container via Docker
-  const containerName = 'nmap-terminal';
-  console.log(`Starting scan ${scanId}: docker exec ${containerName} nmap ${nmapArgs.join(' ')}`);
-  const scanProcess = spawn('docker', ['exec', containerName, 'nmap', ...nmapArgs]);
-  activeScans.set(scanId, scanProcess);
+  // Store scan info for management
+  scanInfos.set(scanId, scanInfo);
   
-  console.log(`Scan ${scanId} started with PID: ${scanProcess.pid}`);
-  
-  // Handle spawn errors (e.g., docker not found, container not running)
-  scanProcess.on('error', (err) => {
-    console.error(`Scan ${scanId} failed to start:`, err);
-    activeScans.delete(scanId);
-    io.emit(`scan-complete-${scanId}`, {
-      success: false,
-      code: -1,
-      output: '',
-      error: `Failed to start scan: ${err.message}`,
-      vaderMessage: "I find your lack of Docker... disturbing.",
-      theme: theme
+  // Function to execute scan for a single target
+  const executeSingleScan = (singleTarget, targetIndex, totalTargets) => {
+    return new Promise((resolve) => {
+      const targetNmapArgs = [...nmapArgs, singleTarget];
+      const containerName = 'nmap-terminal';
+      console.log(`Starting scan ${scanId} [${targetIndex + 1}/${totalTargets}]: docker exec ${containerName} nmap ${targetNmapArgs.join(' ')}`);
+      
+      // Add separator to output
+      const separator = `\n${'='.repeat(60)}\nScanning target ${targetIndex + 1}/${totalTargets}: ${singleTarget}\n${'='.repeat(60)}\n`;
+      io.emit(`scan-progress-${scanId}`, { type: 'stdout', data: separator });
+      scanInfo.totalOutput += separator;
+      
+      const scanProcess = spawn('docker', ['exec', containerName, 'nmap', ...targetNmapArgs]);
+      scanInfo.processes.push(scanProcess);
+      activeScans.set(scanId, scanProcess); // Store current process for stop functionality
+      
+      let targetOutput = '';
+      let targetError = '';
+      
+      scanProcess.stdout.on('data', (data) => {
+        const chunk = data.toString();
+        targetOutput += chunk;
+        scanInfo.totalOutput += chunk;
+        io.emit(`scan-progress-${scanId}`, { type: 'stdout', data: chunk });
+      });
+      
+      scanProcess.stderr.on('data', (data) => {
+        const chunk = data.toString();
+        targetError += chunk;
+        scanInfo.totalError += chunk;
+        io.emit(`scan-progress-${scanId}`, { type: 'stderr', data: chunk });
+      });
+      
+      scanProcess.on('close', (code) => {
+        // Remove this process from active scans (but keep scanId for sequential scanning)
+        activeScans.delete(scanId);
+        
+        const result = {
+          target: singleTarget,
+          output: targetOutput,
+          error: targetError,
+          code: code
+        };
+        
+        resolve(result);
+      });
+      
+      scanProcess.on('error', (err) => {
+        console.error(`Scan ${scanId} failed for target ${singleTarget}:`, err);
+        scanInfo.totalError += `Failed to scan ${singleTarget}: ${err.message}\n`;
+        resolve({
+          target: singleTarget,
+          output: '',
+          error: `Failed to start scan: ${err.message}`,
+          code: -1
+        });
+      });
     });
-  });
+  };
   
-  let output = '';
-  let errorOutput = '';
-  
-  scanProcess.stdout.on('data', (data) => {
-    const chunk = data.toString();
-    output += chunk;
-    console.log(`Scan ${scanId} stdout chunk (${chunk.length} chars)`);
-    if (chunk.length < 200) console.log(`Content: ${chunk}`);
-    io.emit(`scan-progress-${scanId}`, { type: 'stdout', data: chunk });
-  });
-  
-  scanProcess.stderr.on('data', (data) => {
-    const chunk = data.toString();
-    errorOutput += chunk;
-    console.log(`Scan ${scanId} stderr chunk (${chunk.length} chars)`);
-    if (chunk.length < 200) console.log(`Content: ${chunk}`);
-    io.emit(`scan-progress-${scanId}`, { type: 'stderr', data: chunk });
-  });
-  
-  scanProcess.on('close', (code) => {
-    activeScans.delete(scanId);
+  // Function to process targets sequentially with delays
+  const processTargetsSequentially = async () => {
+    const totalTargets = individualTargets.length;
+    let allSuccess = true;
+    
+    for (let i = 0; i < totalTargets; i++) {
+      if (scanInfo.completed) break; // Check if scan was stopped
+      
+      const result = await executeSingleScan(individualTargets[i], i, totalTargets);
+      
+      if (result.code !== 0) {
+        allSuccess = false;
+      }
+      
+      // Add delay between targets (except after the last one)
+      if (i < totalTargets - 1 && delaySeconds > 0 && !scanInfo.completed) {
+        const delayMsg = `\n⏳ Waiting ${delaySeconds} seconds before next target...\n`;
+        io.emit(`scan-progress-${scanId}`, { type: 'stdout', data: delayMsg });
+        scanInfo.totalOutput += delayMsg;
+        
+        await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
+      }
+    }
+    
+    // All targets processed
+    scanInfo.completed = true;
     
     // Vader completion message
-    const vaderMessage = code === 0 
-      ? "The scan is complete. Impressive... most impressive."
-      : "I find your lack of scanning... disturbing.";
+    const vaderMessage = allSuccess 
+      ? "All targets scanned. Impressive... most impressive."
+      : "Scanning complete with some failures. The Dark Side persists.";
     
-    console.log(`Scan ${scanId} completed with code ${code}, output length: ${output.length}`);
+    console.log(`Scan ${scanId} completed, total output length: ${scanInfo.totalOutput.length}`);
     io.emit(`scan-complete-${scanId}`, {
-      success: code === 0,
-      code: code,
-      output: output,
-      error: errorOutput,
+      success: allSuccess,
+      code: allSuccess ? 0 : 1,
+      output: scanInfo.totalOutput,
+      error: scanInfo.totalError,
       vaderMessage: vaderMessage,
       theme: theme
     });
-  });
+    
+    // Clean up scan info
+    scanInfos.delete(scanId);
+  };
+  
+  // Start sequential processing (non-blocking)
+  processTargetsSequentially();
+  
+  // For single target or no delay, also support immediate response
+  const command = individualTargets.length === 1 
+    ? `nmap ${[...nmapArgs, individualTargets[0]].join(' ')}`
+    : `nmap ${[...nmapArgs, target].join(' ')} (sequential with ${delaySeconds}s delay)`;
   
   res.json({ 
     scanId, 
-    command: `nmap ${nmapArgs.join(' ')}`,
+    command: command,
     terminalUrl: TERMINAL_URL 
   });
 });
@@ -172,10 +258,32 @@ app.post('/api/scan', (req, res) => {
 app.post('/api/scan/:scanId/stop', (req, res) => {
   const { scanId } = req.params;
   const scanProcess = activeScans.get(scanId);
+  const scanInfo = scanInfos.get(scanId);
   
+  let killed = false;
+  
+  // Kill the active process if exists
   if (scanProcess) {
     scanProcess.kill('SIGTERM');
     activeScans.delete(scanId);
+    killed = true;
+  }
+  
+  // Mark scan as completed to stop sequential scanning
+  if (scanInfo) {
+    scanInfo.completed = true;
+    // Kill any stored processes (should already be killed but just in case)
+    scanInfo.processes.forEach(proc => {
+      if (!proc.killed) {
+        proc.kill('SIGTERM');
+        killed = true;
+      }
+    });
+    // Clean up
+    scanInfos.delete(scanId);
+  }
+  
+  if (killed) {
     res.json({ success: true, message: "Scan terminated by the Dark Side." });
   } else {
     res.status(404).json({ success: false, message: "Scan not found." });
