@@ -15,8 +15,12 @@ RUN apk add --no-cache \
 
 EXPOSE 7681
 
-# Create startup script using heredoc to avoid escaping issues
-RUN cat > /start.sh << 'EOF'
+# Memory optimizations
+RUN echo "vm.overcommit_memory = 1" >> /etc/sysctl.conf 2>/dev/null || true && \
+    echo "fs.file-max = 100000" >> /etc/sysctl.conf 2>/dev/null || true
+
+# Create entrypoint script for startup messages
+RUN cat > /entrypoint.sh << 'EOF'
 #!/bin/sh
 echo "=== Starting ttyd terminal ==="
 echo "ttyd version: $(ttyd --version 2>/dev/null || echo 'unknown')"
@@ -24,39 +28,29 @@ echo "Terminal will be available on port 7681"
 echo "Credentials: admin:admin"
 echo "Browser compatibility: Chrome/Firefox/Edge recommended"
 echo "================================="
-
-# Optimize Alpine Linux memory settings
-echo "vm.overcommit_memory = 1" >> /etc/sysctl.conf 2>/dev/null || true
-echo "fs.file-max = 100000" >> /etc/sysctl.conf 2>/dev/null || true
-
-# Start ttyd with enhanced options for browser compatibility
-exec ttyd \
-  -w \
-  -p 7681 \
-  -c admin:admin \
-  -6 \
-  -t disableLeaveAlert=true \
-  -t disableReconnect=false \
-  -t reconnect=true \
-  -t reconnectInterval=3000 \
-  -t maxReconnectAttempts=10 \
-  -t titleFixed="VULN Terminal" \
-  -t fontSize=14 \
-  -t term="xterm" \
-  -t enableZmodem=false \
-  -t enableSixel=false \
-  -t enableTrzsz=true \
-  -t trzszDragInitTimeout=300 \
-  -t cursorBlink=true \
-  -t scrollback=5000 \
-  -t rendererType="dom" \
-  -t fontFamily="'Courier New', monospace" \
-  -t theme="{background: 'black', foreground: 'white'}" \
-  -t checkOrigin=false \
-  -t clientOptions='{"enableVTScribe": false}' \
-  bash -l
+exec "$@"
 EOF
+RUN chmod +x /entrypoint.sh
 
-RUN chmod +x /start.sh
+ENTRYPOINT ["/entrypoint.sh"]
 
-CMD ["/start.sh"]
+# ttyd command with exec form to avoid shell parsing issues
+CMD ["ttyd", "-w", "-p", "7681", "-c", "admin:admin", "-6", \
+  "-t", "disableLeaveAlert=true", \
+  "-t", "disableReconnect=false", \
+  "-t", "reconnect=true", \
+  "-t", "reconnectInterval=3000", \
+  "-t", "maxReconnectAttempts=10", \
+  "-t", "titleFixed=VULN Terminal", \
+  "-t", "fontSize=14", \
+  "-t", "term=xterm", \
+  "-t", "enableZmodem=false", \
+  "-t", "enableSixel=false", \
+  "-t", "enableTrzsz=true", \
+  "-t", "trzszDragInitTimeout=300", \
+  "-t", "cursorBlink=true", \
+  "-t", "scrollback=5000", \
+  "-t", "rendererType=dom", \
+  "-t", "fontFamily=Courier New, monospace", \
+  "-t", "checkOrigin=false", \
+  "bash", "-l"]
